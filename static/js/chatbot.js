@@ -147,3 +147,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Установить начальный текст кнопки
     updateToggleButtonText();
 });
+
+
+document.addEventListener('DOMContentLoaded', function() {
+  const aiButton = document.querySelector('#ai-assistant button');
+
+  if (aiButton) {
+    aiButton.addEventListener('click', function() {
+      // Логика открытия чата
+      console.log('AI помощник активирован');
+      // Здесь можно добавить открытие модального окна или чата
+    });
+  }
+});

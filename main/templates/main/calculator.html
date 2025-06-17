@@ -9,6 +9,19 @@
 {% block content %}
 <section class="calculator-container" role="main" aria-labelledby="calculator-title">
     <h1 id="calculator-title">{% trans 'AI Cost Calculator' %}</h1>
+
+    <!-- Контейнер для AI-рекомендаций -->
+    <div id="ai-recommendation" class="ai-recommendation-container">
+        <button class="close-btn" aria-label="{% trans 'Close' %}">&times;</button>
+        <!-- Пример использования ai-error -->
+        <div class="ai-error" style="display: none;">{% trans 'Example error message' %}</div>
+    </div>
+
+    <!-- Кнопка AI-ассистента -->
+    <div id="ai-assistant" class="ai-assistant-btn" aria-label="{% trans 'AI Assistant' %}">
+        🤖 {% trans 'AI Assistant' %}
+    </div>
+
     <form id="calculator-form" method="POST" aria-label="{% trans 'Cost Calculator Form' %}">
         {% csrf_token %}
         <div class="form-group">
@@ -37,6 +50,18 @@
                 <option value="premium">{% trans 'Premium' %}</option>
             </select>
         </div>
+        <div class="form-group design-options">
+            <label>{% trans 'Design Style' %}:</label>
+            <label>
+                <input type="radio" name="style" value="modern" checked> {% trans 'Modern' %}
+            </label>
+            <label>
+                <input type="radio" name="style" value="classic"> {% trans 'Classic' %}
+            </label>
+            <label>
+                <input type="radio" name="style" value="industrial"> {% trans 'Industrial' %}
+            </label>
+        </div>
         <button type="submit" id="calculate-button" class="btn" aria-label="{% trans 'Calculate Cost' %}">{% trans 'Calculate' %}</button>
         <button type="button" id="save-button" class="btn" aria-label="{% trans 'Save Calculation' %}">{% trans 'Save' %}</button>
     </form>
@@ -51,7 +76,7 @@
         <h2>{% trans '3D Visualization' %}</h2>
         <button id="show-model" class="btn">{% trans 'Show Model' %}</button>
         <button id="hide-model" class="btn">{% trans 'Hide Model' %}</button>
-        <model-viewer id="viewer" style="display: none; width: 100%; height: 400px;" src="" ar shadow-intensity="1" camera-controls touch-action="pan-y" alt="{% trans '3D Model Viewer' %}"></model-viewer>
+        <div id="viewer-container"></div>
     </div>
     <a href="{% url 'home' %}" class="btn btn-secondary">{% trans 'Back to Home' %}</a>
 </section>
@@ -118,11 +143,94 @@
     background: #e8f4e8;
     border-radius: 4px;
 }
+.design-options label {
+    display: inline-block;
+    margin-right: 15px;
+    font-weight: normal;
+}
+
+/* Стили для AI-ассистента */
+.ai-assistant-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #005B99;
+    color: white;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    font-size: 24px;
+    transition: transform 0.3s ease;
+}
+.ai-assistant-btn:hover {
+    transform: scale(1.1);
+}
+
+.ai-recommendation-container {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 300px;
+    background: rgba(15, 25, 40, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: none;
+    animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ai-response h3 {
+    color: #4fc3f7;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+.ai-response p {
+    color: #e0f7fa;
+    line-height: 1.5;
+    font-size: 0.9rem;
+}
+.ai-error {
+    color: #ff8a80;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    margin-top: 10px;
+    display: block; /* Убедимся, что класс используется */
+}
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
 </style>
 
 {% block extra_js %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Локальная версия Chart.js -->
+    <script src="{% static 'js/chart.js' %}"></script>
+
     <script src="{% static 'js/calculator.js' %}"></script>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script src="{% static 'js/ai-integration.js' %}"></script>
+
+    <!-- Локальная версия Model Viewer -->
+    <script src="{% static 'js/model-viewer.min.js' %}" type="module"></script>
 {% endblock %}
 {% endblock %}

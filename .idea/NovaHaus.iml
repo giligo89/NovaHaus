@@ -23,6 +23,10 @@
       <excludeFolder url="file://$MODULE_DIR$/staticfiles/fonts" />
       <excludeFolder url="file://$MODULE_DIR$/staticfiles/images/services" />
       <excludeFolder url="file://$MODULE_DIR$/staticfiles/media" />
+      <excludeFolder url="file://$MODULE_DIR$/staticfiles/images/blog" />
+      <excludeFolder url="file://$MODULE_DIR$/staticfiles/images/textures" />
+      <excludeFolder url="file://$MODULE_DIR$/staticfiles/lib" />
+      <excludeFolder url="file://$MODULE_DIR$/staticfiles/models" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.12" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
