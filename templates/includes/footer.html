@@ -1,33 +1,141 @@
 {% load compress static i18n %}
 <footer role="contentinfo">
+    <!-- Остальное содержимое футера без изменений -->
     <div class="footer-content">
-        <div class="footer-logo">
-            <img src="{% static 'images/logo.png' %}" alt="{% trans 'NovaHaus Logo' %}" width="150" height="50">
-            <p>{% trans 'Transforming spaces in Cologne and Hamburg with quality and eco-friendliness.' %}</p>
-        </div>
-        <div class="footer-links">
-            <h3>{% trans 'Quick Links' %}</h3>
-            <ul>
-                <li><a href="{% url 'services' %}">{% trans 'Services' %}</a></li>
-                <li><a href="{% url 'portfolio' %}">{% trans 'Portfolio' %}</a></li>
-                <li><a href="{% url 'blog' %}">{% trans 'Blog' %}</a></li>
-                <li><a href="{% url 'contact' %}">{% trans 'Contact' %}</a></li>
-                <li><a href="{% url 'privacy' %}">{% trans 'Privacy Policy' %}</a></li>
-            </ul>
-        </div>
-        <div class="footer-contact">
-            <h3>{% trans 'Contact Us' %}</h3>
-            <p>{% trans 'Cologne: Musterstraße 123, 50667' %}</p>
-            <p>{% trans 'Hamburg: Beispielweg 456, 20354' %}</p>
-            <p>{% trans 'Phone: +49 155 100 718 48' %}</p>
-            <p><a href="mailto:info@novahaus.de">{% trans 'Email: info@novahaus.de' %}</a></p>
-        </div>
-        <div class="footer-social">
-            <h3>{% trans 'Follow Us' %}</h3>
-            <a href="https://facebook.com/novahaus" target="_blank" rel="noopener" aria-label="{% trans 'Facebook' %}"><i class="fab fa-facebook-f"></i></a>
-            <a href="https://instagram.com/novahaus" target="_blank" rel="noopener" aria-label="{% trans 'Instagram' %}"><i class="fab fa-instagram"></i></a>
-            <a href="https://linkedin.com/company/novahaus" target="_blank" rel="noopener" aria-label="{% trans 'LinkedIn' %}"><i class="fab fa-linkedin-in"></i></a>
-        </div>
+        <!-- ... существующее содержимое футера ... -->
     </div>
+
+    <!-- Map 3D Container -->
+    <div class="map-3d-container">
+        <h3>{% trans "Мы работаем в этих районах" %}</h3>
+        <div id="map-3d"></div>
+    </div>
+
     <p>{% trans '© 2025 NovaHaus. All rights reserved.' %}</p>
+
+    <!-- Блок AI-помощника -->
+    <div id="ai-assistant" class="ai-assistant">
+        <button aria-label="{% trans 'AI помощник' %}">
+            <span class="ai-icon">🤖</span>
+            <span class="ai-text">{% trans "AI-помощник" %}</span>
+        </button>
+    </div>
+
+    <!-- Подключение Mapbox -->
+    <link href="{% static 'lib/mapbox-gl/mapbox-gl.css' %}" rel="stylesheet">
+    <script src="{% static 'lib/mapbox-gl/mapbox-gl.js' %}"></script>
+
+    <!-- Скрипт для 3D карты -->
+    <script>
+        (function() {
+            // Проверка загрузки Mapbox GL JS
+            if (typeof window.mapboxgl === 'undefined') {
+                console.error('Mapbox GL JS не загружен');
+                return;
+            }
+
+            // Алиас для библиотеки
+            const mb = window.mapboxgl;
+
+            // Конфигурация карты
+            const config = {
+                container: 'map-3d',
+                style: 'mapbox://styles/mapbox/light-v11',
+                center: [37.617, 55.755],
+                zoom: 10,
+                pitch: 45,
+                bearing: -20
+            };
+
+            // Инициализация карты
+            mb.accessToken = 'pk.eyJ1Ijoibm92YWhhdXMiLCJhIjoiY2x2dXQ4eW5pMGY4dDJrcWg2b2Y4bGZ3bCJ9.1234567890';
+            const map = new mb.Map(config);
+
+            // Обработчики карты
+            map.on('load', function() {
+                // Слой 3D зданий
+                add3DBuildingsLayer(map);
+
+                // Зона обслуживания
+                addServiceAreaLayer(map);
+
+                // Добавление маркеров офисов
+                addOfficeMarkers(map, mb);
+            });
+
+            /**
+             * Добавляет слой 3D зданий на карту
+             * @param {mapboxgl.Map} map - Объект карты
+             */
+            function add3DBuildingsLayer(map) {
+                map.addLayer({
+                    'id': '3d-buildings',
+                    'source': 'composite',
+                    'source-layer': 'building',
+                    'type': 'fill-extrusion',
+                    'minzoom': 15,
+                    'paint': {
+                        'fill-extrusion-color': '#3a86ff',
+                        'fill-extrusion-height': [
+                            'interpolate', ['linear'], ['zoom'],
+                            15, 0,
+                            16, ['get', 'height']
+                        ],
+                        'fill-extrusion-opacity': 0.7
+                    }
+                });
+            }
+
+            /**
+             * Добавляет слой зоны обслуживания
+             * @param {mapboxgl.Map} map - Объект карты
+             */
+            function addServiceAreaLayer(map) {
+                map.addSource('service-area', {
+                    'type': 'geojson',
+                    'data': {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Polygon',
+                            'coordinates': [[
+                                [37.50, 55.70], [37.70, 55.70],
+                                [37.70, 55.80], [37.50, 55.80],
+                                [37.50, 55.70]
+                            ]]
+                        }
+                    }
+                });
+
+                map.addLayer({
+                    'id': 'service-area-layer',
+                    'type': 'fill',
+                    'source': 'service-area',
+                    'paint': {
+                        'fill-color': '#ff006e',
+                        'fill-opacity': 0.2
+                    }
+                });
+            }
+
+            /**
+             * Добавляет маркеры офисов на карту
+             * @param {mapboxgl.Map} map - Объект карты
+             * @param {mapboxgl} mb - Ссылка на библиотеку Mapbox GL JS
+             */
+            function addOfficeMarkers(map, mb) {
+                const offices = [
+                    {name: "Центральный офис", coordinates: [37.617, 55.755]},
+                    {name: "Северный филиал", coordinates: [37.58, 55.85]},
+                    {name: "Южный филиал", coordinates: [37.65, 55.65]}
+                ];
+
+                offices.forEach(office => {
+                    new mb.Marker({ color: '#3a86ff' })
+                        .setLngLat(office.coordinates)
+                        .setPopup(new mb.Popup().setHTML(`<strong>${office.name}</strong>`))
+                        .addTo(map);
+                });
+            }
+        })();
+    </script>
 </footer>

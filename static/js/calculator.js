@@ -1,7 +1,8 @@
 /* global Chart */
 import { show3DModel } from './visualization.js';
-import { showChart } from './chart.js'; // Импортируем showChart из chart.js
+import { showChart } from './chart.js';
 
+// Экспортируем modelMap для использования в других модулях
 export const modelMap = {
     'apartment': {
         'economy': '/static/models/apartment_economy.glb',
@@ -49,7 +50,7 @@ async function fetchData(url, options) {
         }
         return await response.json();
     } catch (error) {
-        console.error(`Ошибка при запросе к ${url}:`, error);
+        console.error(`Request error (${url}):`, error);
         return { success: false, error: error.message };
     }
 }
@@ -63,9 +64,16 @@ function debounce(func, wait) {
 }
 
 function getCSRFToken() {
-    const token = document.querySelector('meta[name="csrf-token"]')?.content;
-    // eslint-disable-next-line no-throw-literal
-    return token || null;
+    return document.querySelector('meta[name="csrf-token"]')?.content || null;
+}
+
+function getFormValues(form) {
+    const formData = new FormData(form);
+    return {
+        area: parseFloat(formData.get('area') || 0),
+        workType: formData.get('work-type') || '',
+        materialQuality: formData.get('material-quality') || ''
+    };
 }
 
 async function calculateCost(event) {
@@ -79,19 +87,16 @@ async function calculateCost(event) {
 
     try {
         const csrfToken = getCSRFToken();
-        // eslint-disable-next-line no-throw-literal
         if (!csrfToken) {
-            throw new Error('CSRF token not found');
+            resultElement.textContent = 'Ошибка безопасности: отсутствует CSRF токен';
+            resultElement.style.color = 'red';
+            return;
         }
 
-        // TODO: Дублированный код (59 строк) с updateUI; рассмотреть вынос в общую функцию
-        const formData = new FormData(form);
-        const area = parseFloat(formData.get('area') || '0');
-        const workType = formData.get('work-type');
-        const materialQuality = formData.get('material-quality');
+        const { area, workType, materialQuality } = getFormValues(form);
 
         if (!workType || !materialQuality || area <= 0 || isNaN(area)) {
-            resultElement.innerText = 'Ошибка: Пожалуйста, заполните все поля корректными значениями.';
+            resultElement.textContent = 'Ошибка: Пожалуйста, заполните все поля корректными значениями.';
             resultElement.style.color = 'red';
             return;
         }
@@ -105,22 +110,27 @@ async function calculateCost(event) {
 
         loader.style.display = 'block';
 
-        // TODO: Дублированный код (27 строк); рассмотреть вынос в общую функцию
-        const costData = await fetchData('/calculate_cost/', {
+        const costResponse = await fetchData('/calculate_cost/', {
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken },
-            body: formData
+            body: new FormData(form)
         });
 
-        if (!costData.success) {
-            resultElement.innerText = `Ошибка: ${costData.error || 'Неизвестная ошибка'}`;
+        if (!costResponse.success) {
+            resultElement.textContent = `Ошибка: ${costResponse.error || 'Неизвестная ошибка'}`;
             resultElement.style.color = 'red';
             loader.style.display = 'none';
             return;
         }
 
-        const laborCost = costData.labor_cost || 0;
-        const aiData = await fetchData('/get-ai-recommendations/', {
+        // Безопасное извлечение стоимости работ из ответа
+        const laborCost = costResponse.data?.labor_cost ||
+                         costResponse.data?.laborCost ||
+                         costResponse.labor_cost ||
+                         costResponse.laborCost ||
+                         0;
+
+        const aiResponse = await fetchData('/get-ai-recommendations/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -135,64 +145,84 @@ async function calculateCost(event) {
             })
         });
 
-        if (!aiData.success) {
-            recommendationElement.innerText = `Ошибка: ${aiData.error || 'Неизвестная ошибка'}`;
-        } else {
-            recommendationElement.innerText = aiData?.recommendation || 'Нет рекомендаций';
-        }
+        calculationCache.set(cacheKey, {
+            costData: costResponse,
+            aiData: aiResponse
+        });
 
-        calculationCache.set(cacheKey, { costData, aiData });
-        updateUI(costData, aiData, workType, materialQuality);
+        updateUI(costResponse, aiResponse, workType, materialQuality);
     } catch (error) {
-        console.error(error);
-        resultElement.innerText = 'Ошибка: ' + error.message;
-        resultElement.style.color = 'red';
+        console.error('Calculation error:', error);
+        if (resultElement) {
+            resultElement.textContent = 'Ошибка: ' + error.message;
+            resultElement.style.color = 'red';
+        }
     } finally {
-        loader.style.display = 'none';
+        if (loader) loader.style.display = 'none';
     }
 }
 
 function updateUI(costData, aiData, workType, materialQuality) {
     const resultElement = document.getElementById('result');
     const recommendationElement = document.getElementById('ai-recommendation-text');
-    const laborCost = costData.labor_cost || 0;
-    const materialCost = aiData?.material_cost || 0;
+
+    if (!resultElement || !recommendationElement) return;
+
+    // Безопасное извлечение всех данных
+    const laborCost = costData.data?.labor_cost ||
+                    costData.data?.laborCost ||
+                    costData.labor_cost ||
+                    costData.laborCost ||
+                    0;
+
+    const materialCost = aiData.data?.material_cost ||
+                       aiData.data?.materialCost ||
+                       aiData.material_cost ||
+                       aiData.materialCost ||
+                       0;
+
+    const recommendation = aiData.data?.recommendation ||
+                         aiData.recommendation ||
+                         aiData.recommendation ||
+                         'Нет рекомендаций';
+
     const totalCost = laborCost + materialCost;
 
-    // TODO: Дублированный код (14 строк); рассмотреть объединение с calculateCost
-    resultElement.innerText = `Примерная стоимость: ${formatCurrency(totalCost)}`;
+    resultElement.textContent = `Примерная стоимость: ${formatCurrency(totalCost)}`;
     resultElement.style.color = 'black';
     resultElement.dataset.materialCost = materialCost.toString();
     resultElement.dataset.laborCost = laborCost.toString();
+    resultElement.dataset.totalCost = totalCost.toString();
 
-    recommendationElement.innerText = aiData?.recommendation || 'Нет рекомендаций';
+    recommendationElement.textContent = recommendation;
 
-    showChart(materialCost, laborCost, 0); // Используем showChart из chart.js
+    showChart(materialCost, laborCost, 0);
     show3DModel(modelMap[workType]?.[materialQuality] || '/static/models/sample_model.glb');
 }
 
 async function saveCalculation() {
     const form = document.getElementById('calculator-form');
     const resultElement = document.getElementById('result');
+
     if (!form || !resultElement) return;
 
     try {
         const csrfToken = getCSRFToken();
-        // eslint-disable-next-line no-throw-literal
         if (!csrfToken) {
-            throw new Error('CSRF token not found');
+            alert('Ошибка безопасности: отсутствует CSRF токен');
+            return;
         }
 
-        // TODO: Дублированный код (20 строк); рассмотреть объединение с calculateCost
-        const formData = new FormData(form);
+        const { workType, area, materialQuality } = getFormValues(form);
+
         const data = {
-            workType: String(formData.get('work-type') || ''),
-            area: parseFloat(formData.get('area') || '0'),
-            material: String(formData.get('material-quality') || ''),
-            totalCost: parseFloat(resultElement.innerText.match(/[\d,.]+/)?.[0]?.replace(',', '.') || '0'),
+            workType,
+            area,
+            material: materialQuality,
+            totalCost: parseFloat(resultElement.dataset.totalCost || '0'),
             materialCost: parseFloat(resultElement.dataset.materialCost || '0'),
             laborCost: parseFloat(resultElement.dataset.laborCost || '0'),
-            timestamp: new Date().toLocaleString()
+            timestamp: new Date().toISOString()
         };
 
         const result = await fetchData('/save-calculation/', {
@@ -206,10 +236,43 @@ async function saveCalculation() {
 
         alert(result?.success ? 'Расчет успешно сохранен!' : 'Ошибка при сохранении расчета.');
     } catch (error) {
-        console.error(error);
+        console.error('Save error:', error);
         alert('Ошибка: ' + error.message);
     }
 }
 
-document.getElementById('calculator-form')?.addEventListener('submit', debounce(calculateCost, 300));
-document.getElementById('save-button')?.addEventListener('click', saveCalculation);
+function initEventListeners() {
+    const form = document.getElementById('calculator-form');
+    const saveButton = document.getElementById('save-button');
+
+    if (form) {
+        form.addEventListener('submit', debounce(calculateCost, 300));
+    }
+
+    if (saveButton) {
+        saveButton.addEventListener('click', saveCalculation);
+    }
+}
+
+function initModelViewer() {
+    const container = document.getElementById('viewer-container');
+    if (!container) return;
+
+    const modelViewer = document.createElement('model-viewer');
+    modelViewer.id = 'viewer';
+    modelViewer.style.cssText = 'display: none; width: 100%; height: 400px;';
+    modelViewer.setAttribute('ar', '');
+    modelViewer.setAttribute('shadow-intensity', '1');
+    modelViewer.setAttribute('camera-controls', '');
+    modelViewer.setAttribute('touch-action', 'pan-y');
+    modelViewer.alt = '3D Model Viewer';
+
+    container.appendChild(modelViewer);
+}
+
+function initCalculator() {
+    initEventListeners();
+    initModelViewer();
+}
+
+document.addEventListener('DOMContentLoaded', initCalculator);

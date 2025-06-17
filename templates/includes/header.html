@@ -1,21 +1,21 @@
 {% load compress static i18n %}
 
-<header class="header">
+<header class="header sticky-header">
     <div class="header-container">
         <div class="logo">
-            <img src="{% static 'images/logo.png' %}" alt="NovaHaus Logo" style="height: 150px; width: auto;">
+            <img src="{% static 'images/logo.gif' %}" alt="NovaHaus Logo" style="height: 150px; width: auto;">
         </div>
         <div class="content">
             <h1 class="page-title">NovaHaus</h1>
             <p class="subtitle">{% trans "надежность, качество и сроки гарантируется" %}</p>
             <nav class="desktop-nav">
-                <ul>
-                    <li><a href="{% url 'home' %}" class="nav-link {% if request.path == '/' or request.path == '/home/' %}active{% endif %}">{% trans 'Главная' %}</a></li>
-                    <li><a href="{% url 'services' %}" class="nav-link {% if '/services/' in request.path %}active{% endif %}">{% trans 'Услуги' %}</a></li>
-                    <li><a href="{% url 'portfolio' %}" class="nav-link {% if '/portfolio/' in request.path %}active{% endif %}">{% trans 'Портфолио' %}</a></li>
-                    <li><a href="{% url 'blog' %}" class="nav-link {% if '/blog/' in request.path %}active{% endif %}">{% trans 'Блог' %}</a></li>
-                    <li><a href="{% url 'contact' %}" class="nav-link {% if '/contact/' in request.path %}active{% endif %}">{% trans 'Контакты' %}</a></li>
-                    <li><a href="{% url 'register_partner' %}" class="nav-link partner-link {% if '/register-partner/' in request.path %}active{% endif %}">{% trans 'Стать партнером' %}</a></li>
+                <ul class="nav-items">
+                    <li class="nav-item"><a href="{% url 'home' %}" class="nav-link {% if request.path == '/' or request.path == '/home/' %}active{% endif %}">{% trans 'Главная' %}</a></li>
+                    <li class="nav-item"><a href="{% url 'services' %}" class="nav-link {% if '/services/' in request.path %}active{% endif %}">{% trans 'Услуги' %}</a></li>
+                    <li class="nav-item"><a href="{% url 'portfolio' %}" class="nav-link {% if '/portfolio/' in request.path %}active{% endif %}">{% trans 'Портфолио' %}</a></li>
+                    <li class="nav-item"><a href="{% url 'blog' %}" class="nav-link {% if '/blog/' in request.path %}active{% endif %}">{% trans 'Блог' %}</a></li>
+                    <li class="nav-item"><a href="{% url 'contact' %}" class="nav-link {% if '/contact/' in request.path %}active{% endif %}">{% trans 'Контакты' %}</a></li>
+                    <li class="nav-item"><a href="{% url 'register_partner' %}" class="nav-link partner-link {% if '/register-partner/' in request.path %}active{% endif %}">{% trans 'Стать партнером' %}</a></li>
                 </ul>
             </nav>
         </div>
@@ -31,6 +31,10 @@
                 </select>
             </form>
         </div>
+        <div class="geo-location-container">
+            <p id="geo-location" class="geo-location-text">{% trans "Определяем ваш район..." %}</p>
+        </div>
+        <button id="ar-button" class="ar-button">AR-просмотр</button>
     </div>
 </header>
 

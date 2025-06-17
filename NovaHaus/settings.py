@@ -157,38 +157,39 @@ LOGGING = {
     },
 }
 
-# Sentry только для production
-if not DEBUG:
-    sentry_dsn = os.getenv('SENTRY_DSN')
-    if sentry_dsn and sentry_dsn.startswith('https://'):
-        import sentry_sdk
-        from sentry_sdk.integrations.django import DjangoIntegration
-        from sentry_sdk.integrations.logging import LoggingIntegration
+# # Sentry только для production
+# if not DEBUG:
+#     sentry_dsn = os.getenv('SENTRY_DSN')
+#     if sentry_dsn and sentry_dsn.startswith('https://'):
+#         import sentry_sdk
+#         from sentry_sdk.integrations.django import DjangoIntegration
+#         from sentry_sdk.integrations.logging import LoggingIntegration
+#
+#         sentry_sdk.init(
+#             dsn=sentry_dsn,
+#             integrations=[
+#                 DjangoIntegration(),
+#                 LoggingIntegration(level=logging.INFO, event_level=logging.ERROR)
+#             ],
+#             traces_sample_rate=1.0,
+#             send_default_pii=True,
+#             environment='production'
+#         )
+#         logger.info("Sentry инициализирован для production")
+#
+#         # Добавляем Sentry handler
+#         LOGGING['handlers']['sentry'] = {
+#             'level': 'ERROR',
+#             'class': 'sentry_sdk.integrations.logging.SentryHandler',
+#             'formatter': 'verbose',
+#         }
+#         for logger_name in LOGGING['loggers']:
+#             LOGGING['loggers'][logger_name]['handlers'].append('sentry')
+#     else:
+#         logger.warning("Sentry не инициализирован: SENTRY_DSN отсутствует или некорректен")
 
-        sentry_sdk.init(
-            dsn=sentry_dsn,
-            integrations=[
-                DjangoIntegration(),
-                LoggingIntegration(level=logging.INFO, event_level=logging.ERROR)
-            ],
-            traces_sample_rate=1.0,
-            send_default_pii=True,
-            environment='production'
-        )
-        logger.info("Sentry инициализирован для production")
 
-        # Добавляем Sentry handler
-        LOGGING['handlers']['sentry'] = {
-            'level': 'ERROR',
-            'class': 'sentry_sdk.integrations.logging.SentryHandler',
-            'formatter': 'verbose',
-        }
-        for logger_name in LOGGING['loggers']:
-            LOGGING['loggers'][logger_name]['handlers'].append('sentry')
-    else:
-        logger.warning("Sentry не инициализирован: SENTRY_DSN отсутствует или некорректен")
-
-# ========== Кэш и Redis ==========
+ # ========== Кэш и Redis ==========
 if DEBUG:
     CACHES = {
         'default': {
@@ -320,7 +321,9 @@ TEMPLATES = [
 
 # Статические файлы
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+SSTATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static/dist'),
+]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="ar-viewer-container">
+  <h1>{% trans "AR Визуализация Ремонта" %}</h1>
+  <p>{% trans "Используйте AR для примерки материалов и мебели в вашем пространстве" %}</p>
+
+  <div id="ar-container">
+    <model-viewer
+      src="{% static 'models/living_room.glb' %}"
+      ar
+      ar-modes="webxr scene-viewer"
+      environment-image="neutral"
+      shadow-intensity="1"
+      camera-controls
+      enable-pan
+      alt="3D модель гостиной">
+    </model-viewer>
+  </div>
+
+  <div class="ar-controls">
+    <button id="save-config" class="btn-primary">
+      {% trans "Сохранить конфигурацию" %}
+    </button>
+    <button id="reset-config" class="btn-secondary">
+      {% trans "Сбросить" %}
+    </button>
+    <button id="add-furniture" class="btn-primary">
+      {% trans "Добавить мебель" %}
+    </button>
+  </div>
+
+  <div class="material-selection">
+    <h2>{% trans "Выбор материалов" %}</h2>
+    <div class="materials-grid">
+      <!-- Здесь будут кнопки для выбора материалов -->
+    </div>
+  </div>
+</div>
+{% endblock %}
